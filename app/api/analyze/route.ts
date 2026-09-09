@@ -12,46 +12,60 @@ export async function POST(request: Request) {
       );
     }
 
-    // Convert uploaded image to FormData
     const backendFormData = new FormData();
     backendFormData.append("file", file);
 
-    // Your CarDD Python backend URL
-    const backendUrl =
-      process.env.CARDD_API_URL || "http://127.0.0.1:8000/analyze";
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/analyze`,
+      {
+        method: "POST",
+        body: backendFormData,
+      },
+    );
 
-    const response = await fetch(backendUrl, {
-      method: "POST",
-      body: backendFormData,
-    });
+    // Read as text first so we can see what the backend actually returned
+    const responseText = await response.text();
+
+    console.log("BACKEND /analyze STATUS:", response.status);
+    console.log(
+      "BACKEND /analyze CONTENT-TYPE:",
+      response.headers.get("content-type"),
+    );
+    console.log("BACKEND /analyze RESPONSE:", responseText.slice(0, 1000));
 
     if (!response.ok) {
-      const errorText = await response.text();
-
-      console.error("CarDD backend error:", errorText);
-
       return NextResponse.json(
         {
-          error: "CarDD analysis failed.",
-          details: errorText,
+          error: "Backend /analyze failed",
+          status: response.status,
+          details: responseText,
         },
         { status: response.status },
       );
     }
 
-    const result = await response.json();
+    try {
+      const data = JSON.parse(responseText);
 
-    return NextResponse.json({
-      success: true,
-      result,
-    });
+      return NextResponse.json(data);
+    } catch {
+      return NextResponse.json(
+        {
+          error: "Backend did not return JSON",
+          status: response.status,
+          contentType: response.headers.get("content-type"),
+          response: responseText.slice(0, 1000),
+        },
+        { status: 502 },
+      );
+    }
   } catch (error) {
-    console.error("Analysis error:", error);
+    console.error("Report analysis error:", error);
 
     return NextResponse.json(
       {
-        success: false,
-        error: "Failed to analyze image.",
+        error: "Failed to connect to the analysis backend.",
+        details: String(error),
       },
       { status: 500 },
     );

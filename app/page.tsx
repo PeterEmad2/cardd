@@ -75,6 +75,7 @@ export default function Home() {
       min: 4500,
       max: 8000,
     },
+
     damage_assessment: [
       {
         damage_type: "Dent",
@@ -102,6 +103,7 @@ export default function Home() {
       "Evaluate scratches for repainting.",
       "Inspect the rear bumper paint damage.",
     ],
+
     tools_and_equipment_needed: [
       "PDR dent repair tools",
       "Body hammer and dolly",
@@ -159,27 +161,41 @@ export default function Home() {
     setError("");
 
     try {
+      const formData = new FormData();
+      formData.append("file", file);
+
       // =================================
       // 1. GET ANNOTATED IMAGE
       // =================================
 
-      const imageFormData = new FormData();
-      imageFormData.append("file", file);
-
-      const imageResponse = await fetch("http://localhost:8000/analyze-image", {
+      const imageResponse = await fetch("/api/analyze-image", {
         method: "POST",
-        body: imageFormData,
+        body: formData,
       });
 
       if (!imageResponse.ok) {
-        throw new Error(`Image analysis failed: ${imageResponse.status}`);
+        let errorMessage = `Image analysis failed: ${imageResponse.status}`;
+
+        try {
+          const errorData = await imageResponse.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          // Backend did not return JSON
+        }
+
+        throw new Error(errorMessage);
       }
 
       const imageBlob = await imageResponse.blob();
 
-      const imageUrl = URL.createObjectURL(imageBlob);
+      if (!imageBlob.type.startsWith("image/")) {
+        throw new Error("Backend did not return an image.");
+      }
 
-      setResultImage(imageUrl);
+      const resultImageUrl = URL.createObjectURL(imageBlob);
+
+      setResultImage(resultImageUrl);
+      setView("detection");
 
       // =================================
       // 2. GET JSON REPORT
@@ -188,18 +204,27 @@ export default function Home() {
       const reportFormData = new FormData();
       reportFormData.append("file", file);
 
-      const reportResponse = await fetch("http://localhost:8000/analyze", {
+      const reportResponse = await fetch("/api/analyze", {
         method: "POST",
         body: reportFormData,
       });
 
       if (!reportResponse.ok) {
-        throw new Error(`Report analysis failed: ${reportResponse.status}`);
+        let errorMessage = `Report analysis failed: ${reportResponse.status}`;
+
+        try {
+          const errorData = await reportResponse.json();
+          errorMessage = errorData.error || errorData.details || errorMessage;
+        } catch {
+          // Backend did not return JSON
+        }
+
+        throw new Error(errorMessage);
       }
 
       const data = await reportResponse.json();
 
-      console.log("BACKEND DATA:", data);
+      console.log("CARDD ANALYSIS DATA:", JSON.stringify(data, null, 2));
 
       // =================================
       // 3. SET REPORT
@@ -229,25 +254,29 @@ export default function Home() {
       // =================================
 
       setDetections(
-        (data.findings || []).map((finding: any) => ({
-          type: finding.damage_type,
-          location: "Detected area",
-          percentage: finding.area_pct_of_image,
-          level: "Detected",
-          tone: "red",
-          bbox: finding.bbox,
-        })),
+        (data.findings || []).map((finding: any) => {
+          const assessment = data.report?.damage_assessment?.find(
+            (item: any) => item.damage_type === finding.damage_type,
+          );
+
+          return {
+            type: finding.damage_type,
+            location: assessment?.location_on_vehicle || "Detected area",
+            percentage: finding.area_pct_of_image,
+            level: assessment?.severity || "Detected",
+            tone: "red",
+            bbox: finding.bbox,
+          };
+        }),
       );
-
-      // =================================
-      // 6. SHOW AI DETECTION
-      // =================================
-
-      setView("detection");
     } catch (error) {
       console.error("ANALYSIS ERROR:", error);
 
-      setError("Could not connect to the AI backend.");
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Could not connect to the AI backend.",
+      );
     } finally {
       setAnalyzing(false);
     }
@@ -704,8 +733,6 @@ ${report.notes || "No additional notes."}
               setView={setView}
               analyzing={analyzing}
               detections={detections}
-              // IMPORTANT:
-              // Only Copy Image uses this state
               copied={copiedImage}
               image={view === "detection" ? resultImage : originalImage}
               onCopyImage={async () => {
@@ -755,8 +782,6 @@ ${report.notes || "No additional notes."}
             <DamageReport
               report={report}
               severity={severity}
-              // IMPORTANT:
-              // Only Copy Report uses this state
               copied={copiedReport}
               onCopyReport={copyReport}
               onDownloadPdf={downloadReportPdf}
