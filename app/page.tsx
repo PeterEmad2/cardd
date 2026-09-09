@@ -36,21 +36,21 @@ export default function Home() {
     {
       type: "Dent",
       location: "Front door",
-      confidence: 94,
+      percentage: 94,
       level: "High",
       tone: "red",
     },
     {
       type: "Scratch",
       location: "Front-right panel",
-      confidence: 89,
+      percentage: 89,
       level: "Medium",
       tone: "orange",
     },
     {
       type: "Paint Damage",
       location: "Rear bumper",
-      confidence: 81,
+      percentage: 81,
       level: "Medium",
       tone: "yellow",
     },
@@ -59,7 +59,22 @@ export default function Home() {
   const [report, setReport] = useState<any>({
     notes:
       "Demo analysis: visible damage is concentrated around the front-right side of the vehicle. A significant dent and surface scratches are visible.",
+    estimated_repair_time_hours: 2,
 
+    technician_service_cost_egp: {
+      min: 2000,
+      max: 3500,
+    },
+
+    equipment_and_parts_cost_egp: {
+      min: 2500,
+      max: 4500,
+    },
+
+    total_estimated_cost_egp: {
+      min: 4500,
+      max: 8000,
+    },
     damage_assessment: [
       {
         damage_type: "Dent",
@@ -86,6 +101,13 @@ export default function Home() {
       "Repair the front door deformation.",
       "Evaluate scratches for repainting.",
       "Inspect the rear bumper paint damage.",
+    ],
+    tools_and_equipment_needed: [
+      "PDR dent repair tools",
+      "Body hammer and dolly",
+      "Sanding tools",
+      "Automotive polishing machine",
+      "Paint spray equipment",
     ],
   });
 

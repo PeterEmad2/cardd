@@ -173,10 +173,14 @@ export default function DamageReport({
             </div>
 
             <div className="mt-2 text-2xl font-semibold text-white">
-              {report.estimated_repair_time_hours}
+              {" "}
+              {typeof report.estimated_repair_time_hours === "number"
+                ? report.estimated_repair_time_hours
+                : "2"}{" "}
               <span className="ml-1 text-sm font-normal text-white/30">
-                hrs
-              </span>
+                {" "}
+                hrs{" "}
+              </span>{" "}
             </div>
           </div>
         </div>
@@ -304,39 +308,57 @@ export default function DamageReport({
             COST
         ========================= */}
         <div className="rounded-xl border border-white/10 bg-white/[.025] p-4">
+          {" "}
           <div className="mb-4 flex items-center gap-2">
-            <DollarSign size={14} className="text-[#ff6b58]" />
-
+            {" "}
+            <DollarSign size={14} className="text-[#ff6b58]" />{" "}
             <h3 className="text-sm font-semibold text-white">
-              Estimated Repair Cost
-            </h3>
-          </div>
-
+              {" "}
+              Estimated Repair Cost{" "}
+            </h3>{" "}
+          </div>{" "}
           <div className="grid gap-3 sm:grid-cols-3">
+            {" "}
+            {/* Technician */}{" "}
             <div>
-              <p className="text-[10px] text-white/30">Technician</p>
-
+              {" "}
+              <p className="text-[10px] text-white/30"> Technician </p>{" "}
               <p className="mt-1 text-sm font-medium text-white">
-                {report.technician_service_cost_egp?.toLocaleString()} EGP
-              </p>
-            </div>
-
+                {" "}
+                {report.technician_service_cost_egp
+                  ? `${report.technician_service_cost_egp.min?.toLocaleString()} – ${report.technician_service_cost_egp.max?.toLocaleString()} EGP`
+                  : "—"}{" "}
+              </p>{" "}
+            </div>{" "}
+            {/* Parts & Equipment */}{" "}
             <div>
-              <p className="text-[10px] text-white/30">Parts & Equipment</p>
-
+              {" "}
+              <p className="text-[10px] text-white/30">
+                {" "}
+                Parts & Equipment{" "}
+              </p>{" "}
               <p className="mt-1 text-sm font-medium text-white">
-                {report.equipment_and_parts_cost_egp?.toLocaleString()} EGP
-              </p>
-            </div>
-
+                {" "}
+                {report.equipment_and_parts_cost_egp
+                  ? `${report.equipment_and_parts_cost_egp.min?.toLocaleString()} – ${report.equipment_and_parts_cost_egp.max?.toLocaleString()} EGP`
+                  : "—"}{" "}
+              </p>{" "}
+            </div>{" "}
+            {/* Total */}{" "}
             <div className="rounded-lg border border-[#ff5b45]/20 bg-[#ff5b45]/[.05] p-3 sm:-my-1">
-              <p className="text-[10px] text-[#ff8a78]">Total Estimated Cost</p>
-
+              {" "}
+              <p className="text-[10px] text-[#ff8a78]">
+                {" "}
+                Total Estimated Cost{" "}
+              </p>{" "}
               <p className="mt-1 text-lg font-bold text-[#ff6b58]">
-                {report.total_estimated_cost_egp?.toLocaleString()} EGP
-              </p>
-            </div>
-          </div>
+                {" "}
+                {report.total_estimated_cost_egp
+                  ? `${report.total_estimated_cost_egp.min?.toLocaleString()} – ${report.total_estimated_cost_egp.max?.toLocaleString()} EGP`
+                  : "—"}{" "}
+              </p>{" "}
+            </div>{" "}
+          </div>{" "}
         </div>
 
         {/* =========================
