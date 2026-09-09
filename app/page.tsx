@@ -24,7 +24,10 @@ export default function Home() {
   const [view, setView] = useState<"original" | "detection">("original");
 
   const [analyzing, setAnalyzing] = useState(false);
-  const [copied, setCopied] = useState(false);
+
+  // Separate copy states
+  const [copiedImage, setCopiedImage] = useState(false);
+  const [copiedReport, setCopiedReport] = useState(false);
 
   // Backend results
   const [resultImage, setResultImage] = useState<string | null>(null);
@@ -114,6 +117,10 @@ export default function Home() {
     setSeverity("");
     setError("");
 
+    // Reset copy animations
+    setCopiedImage(false);
+    setCopiedReport(false);
+
     // Show uploaded image first
     setView("original");
   }
@@ -202,15 +209,10 @@ export default function Home() {
       setDetections(
         (data.findings || []).map((finding: any) => ({
           type: finding.damage_type,
-
           location: "Detected area",
-
           percentage: finding.area_pct_of_image,
-
           level: "Detected",
-
           tone: "red",
-
           bbox: finding.bbox,
         })),
       );
@@ -228,6 +230,7 @@ export default function Home() {
       setAnalyzing(false);
     }
   };
+
   const downloadReportPdf = async () => {
     if (!report) {
       setError("Analyze the image first.");
@@ -496,10 +499,57 @@ export default function Home() {
   };
 
   async function copyReport() {
-    const report = `Vehicle Damage Assessment\n\nOverall Severity: Moderate\n\nThe vehicle shows visible damage concentrated around the front-right side. A significant dent is present on the front door, accompanied by several surface scratches. The rear bumper appears to have minor paint damage.\n\nDetailed Findings\n• Front door dent with deformation\n• Surface scratches on front-right panel\n• Minor paint damage on rear bumper\n\nRecommended Action\nPerform a bodywork inspection, repair the front door, and evaluate the scratches for paint damage.`;
-    await navigator.clipboard?.writeText(report);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1600);
+    if (!report) return;
+
+    const reportText = `
+Vehicle Damage Assessment
+
+Overall Severity: ${severity || "Unknown"}
+
+Detailed Findings
+${(report.damage_assessment || [])
+  .map(
+    (damage: any) =>
+      `• ${damage.damage_type}
+  Location: ${damage.location_on_vehicle}
+  Severity: ${damage.severity}
+  ${damage.description}`,
+  )
+  .join("\n\n")}
+
+Recommended Repair Steps
+${(report.repair_steps || [])
+  .map((step: string, index: number) => `${index + 1}. ${step}`)
+  .join("\n")}
+
+Repair Time:
+${report.estimated_repair_time_hours ?? "--"} hours
+
+Estimated Cost:
+Technician Service: ${
+      report.technician_service_cost_egp?.toLocaleString() ?? "--"
+    } EGP
+
+Parts & Equipment: ${
+      report.equipment_and_parts_cost_egp?.toLocaleString() ?? "--"
+    } EGP
+
+Total Estimated Cost: ${
+      report.total_estimated_cost_egp?.toLocaleString() ?? "--"
+    } EGP
+
+Notes:
+${report.notes || "No additional notes."}
+`;
+
+    await navigator.clipboard?.writeText(reportText);
+
+    // ONLY Report button animates
+    setCopiedReport(true);
+
+    setTimeout(() => {
+      setCopiedReport(false);
+    }, 1600);
   }
 
   function downloadImage() {
@@ -509,10 +559,15 @@ export default function Home() {
     }
 
     const a = document.createElement("a");
+
     a.href = resultImage;
+
     a.download = `cardd-${fileName || "annotated-image"}`;
+
     document.body.appendChild(a);
+
     a.click();
+
     document.body.removeChild(a);
   }
 
@@ -521,12 +576,30 @@ export default function Home() {
       <Header />
 
       <section className="mx-auto max-w-[1450px] px-6 pb-10 pt-10 lg:px-10">
-        {/* Hero */}
-        <div className="relative overflow-hidden pb-10">
-          <div className="absolute right-0 top-0 h-[230px] w-[560px] rounded-full bg-[#ff4d36]/[.055] blur-[100px]" />
+        {/* =========================
+            HERO
+        ========================= */}
 
-          <div className="relative">
-            <div className="mb-3 text-[10px] font-medium tracking-[.3em] text-[#ff6b58]">
+        <div className="relative overflow-hidden pb-10">
+          {/* Car background */}
+
+          <div
+            className="absolute right-0 top-[-20px] h-[280px] w-[60%] bg-cover bg-center opacity-50"
+            style={{
+              backgroundImage: "url('/car-hero.png')",
+            }}
+          />
+
+          {/* Dark gradient */}
+
+          <div className="absolute inset-0 bg-gradient-to-r from-[#07090b] via-[#07090b]/90 to-transparent" />
+
+          {/* Red glow */}
+
+          <div className="absolute right-[15%] top-10 h-[220px] w-[500px] rounded-full bg-[#ff4d36]/[.06] blur-[100px]" />
+
+          <div className="relative z-10">
+            <div className="mb-3 text-[10px] font-medium tracking-[.3em] text-white/60">
               TURN IMAGES INTO INSIGHTS
             </div>
 
@@ -543,9 +616,15 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Main */}
+        {/* =========================
+            MAIN
+        ========================= */}
+
         <div className="grid gap-5 xl:grid-cols-[.72fr_1.28fr]">
-          {/* LEFT */}
+          {/* =========================
+              LEFT
+          ========================= */}
+
           <div>
             <UploadCard
               inputRef={inputRef}
@@ -561,6 +640,9 @@ export default function Home() {
                 setReport(null);
                 setSeverity("");
                 setError("");
+
+                setCopiedImage(false);
+                setCopiedReport(false);
 
                 if (inputRef.current) {
                   inputRef.current.value = "";
@@ -588,7 +670,10 @@ export default function Home() {
             </button>
           </div>
 
-          {/* RIGHT */}
+          {/* =========================
+              RIGHT
+          ========================= */}
+
           <div className="space-y-5">
             <AnalysisResults
               originalImage={originalImage}
@@ -597,7 +682,9 @@ export default function Home() {
               setView={setView}
               analyzing={analyzing}
               detections={detections}
-              copied={copied}
+              // IMPORTANT:
+              // Only Copy Image uses this state
+              copied={copiedImage}
               image={view === "detection" ? resultImage : originalImage}
               onCopyImage={async () => {
                 if (!resultImage) return;
@@ -611,6 +698,7 @@ export default function Home() {
                   canvas.height = img.naturalHeight;
 
                   const ctx = canvas.getContext("2d");
+
                   if (!ctx) return;
 
                   ctx.drawImage(img, 0, 0);
@@ -618,17 +706,22 @@ export default function Home() {
                   canvas.toBlob(async (blob) => {
                     if (!blob) return;
 
-                    await navigator.clipboard.write([
-                      new ClipboardItem({
-                        "image/png": blob,
-                      }),
-                    ]);
+                    try {
+                      await navigator.clipboard.write([
+                        new ClipboardItem({
+                          "image/png": blob,
+                        }),
+                      ]);
 
-                    setCopied(true);
+                      // ONLY Image button animates
+                      setCopiedImage(true);
 
-                    setTimeout(() => {
-                      setCopied(false);
-                    }, 1600);
+                      setTimeout(() => {
+                        setCopiedImage(false);
+                      }, 1600);
+                    } catch (error) {
+                      console.error("COPY IMAGE ERROR:", error);
+                    }
                   }, "image/png");
                 };
 
@@ -640,13 +733,19 @@ export default function Home() {
             <DamageReport
               report={report}
               severity={severity}
-              copied={copied}
+              // IMPORTANT:
+              // Only Copy Report uses this state
+              copied={copiedReport}
               onCopyReport={copyReport}
               onDownloadPdf={downloadReportPdf}
             />
           </div>
         </div>
       </section>
+
+      {/* =========================
+          FOOTER
+      ========================= */}
 
       <footer className="mx-auto flex max-w-[1450px] items-center justify-between border-t border-white/[.07] px-6 py-5 text-[10px] text-white/25 lg:px-10">
         <div>

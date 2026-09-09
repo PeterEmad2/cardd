@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 
 import {
   Activity,
@@ -8,6 +9,7 @@ import {
   ShieldCheck,
   Sparkles,
   ZoomIn,
+  ZoomOut,
 } from "lucide-react";
 
 interface Detection {
@@ -43,6 +45,8 @@ export default function AnalysisResults({
   onCopyImage,
   onDownload,
 }: AnalysisResultsProps) {
+  const [zoomed, setZoomed] = useState(false);
+
   const displayedImage = view === "detection" ? resultImage : originalImage;
 
   return (
@@ -107,10 +111,12 @@ export default function AnalysisResults({
         <div className="ml-auto flex gap-2">
           <button
             type="button"
-            title="Zoom"
-            className="grid h-9 w-9 place-items-center rounded-lg border border-white/10 text-white/55 hover:text-white"
+            title={zoomed ? "Zoom out" : "Zoom in"}
+            onClick={() => setZoomed(!zoomed)}
+            disabled={!displayedImage}
+            className="grid h-9 w-9 place-items-center rounded-lg border border-white/10 text-white/55 hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
           >
-            <ZoomIn size={15} />
+            {zoomed ? <ZoomOut size={15} /> : <ZoomIn size={15} />}
           </button>
 
           <button
@@ -136,7 +142,18 @@ export default function AnalysisResults({
 
           <button
             type="button"
-            className="grid h-9 w-9 place-items-center rounded-lg border border-white/10 text-white/55 hover:text-white"
+            title="Fullscreen"
+            onClick={() => {
+              const imageContainer = document.getElementById(
+                "analysis-image-container",
+              );
+
+              if (imageContainer) {
+                imageContainer.requestFullscreen();
+              }
+            }}
+            disabled={!displayedImage}
+            className="grid h-9 w-9 place-items-center rounded-lg border border-white/10 text-white/55 hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
           >
             <Maximize2 size={15} />
           </button>
@@ -146,7 +163,10 @@ export default function AnalysisResults({
       {/* Image + detections */}
       <div className="grid gap-4 lg:grid-cols-[1.25fr_.75fr]">
         {/* Image */}
-        <div className="relative overflow-hidden rounded-xl border border-white/10 bg-black">
+        <div
+          id="analysis-image-container"
+          className="relative overflow-hidden rounded-xl border border-white/10 bg-black"
+        >
           {displayedImage ? (
             <img
               src={displayedImage}
@@ -155,7 +175,11 @@ export default function AnalysisResults({
                   ? "AI detection result"
                   : "Original vehicle"
               }
-              className="block h-auto max-h-[520px] w-full object-contain"
+              className={`block w-full object-contain transition-transform duration-300 ${
+                zoomed
+                  ? "scale-150 cursor-zoom-out"
+                  : "max-h-[520px] cursor-zoom-in"
+              }`}
             />
           ) : (
             <div className="flex min-h-[400px] items-center justify-center text-white/30">

@@ -80,3 +80,22 @@ button {
     opacity: 0;
   }
 }
+
+#analysis-image-container:fullscreen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+  height: 100vh;
+  background: #000;
+  border: none;
+  border-radius: 0;
+}
+
+#analysis-image-container:fullscreen img {
+  width: auto;
+  height: auto;
+  max-width: 95vw;
+  max-height: 90vh;
+  object-fit: contain;
+}
