@@ -2,27 +2,37 @@
 
 import Link from "next/link";
 import { ArrowLeft, CalendarDays, Car, ChevronRight } from "lucide-react";
+import { useEffect, useState } from "react";
 
-const history = [
-  {
-    id: 1,
-    date: "Sep 9, 2026",
-    vehicle: "Demo Vehicle",
-    damage: "Dent, Scratch",
-    severity: "Moderate",
-    cost: "3,500 – 7,000 EGP",
-  },
-  {
-    id: 2,
-    date: "Sep 8, 2026",
-    vehicle: "Demo Vehicle",
-    damage: "Scratch",
-    severity: "Minor",
-    cost: "1,500 – 3,000 EGP",
-  },
-];
+type HistoryItem = {
+  id: string;
+  date: string;
+  timestamp: number;
+  vehicle: string;
+  damage: string;
+  severity: string;
+  cost: string;
+  originalImage?: string;
+  resultImage?: string;
+  report?: any;
+  detections?: any[];
+};
 
 export default function HistoryPage() {
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("cardd-history");
+
+      if (saved) {
+        setHistory(JSON.parse(saved));
+      }
+    } catch (error) {
+      console.error("HISTORY LOAD ERROR:", error);
+    }
+  }, []);
+
   return (
     <main className="min-h-screen bg-[#07090b] text-white">
       <div className="mx-auto max-w-[1200px] px-6 py-8 lg:px-10">
@@ -75,7 +85,7 @@ export default function HistoryPage() {
                       {item.date}
                     </span>
 
-                    <span>{item.damage}</span>
+                    <span>{item.damage || "No damage detected"}</span>
                   </div>
                 </div>
 
@@ -89,12 +99,12 @@ export default function HistoryPage() {
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  className="grid h-9 w-9 place-items-center rounded-lg border border-white/10 text-white/40 transition hover:border-white/20 hover:text-white"
+                <Link
+                  href={`/history/${item.id}`}
+                  className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-white/10 text-white/40 transition hover:border-white/20 hover:text-white"
                 >
                   <ChevronRight size={15} />
-                </button>
+                </Link>
               </div>
             </div>
           ))}
@@ -103,7 +113,15 @@ export default function HistoryPage() {
         {history.length === 0 && (
           <div className="rounded-2xl border border-white/10 bg-white/[.025] py-20 text-center">
             <Car className="mx-auto mb-4 text-white/20" size={30} />
+
             <p className="text-sm text-white/35">No analysis history yet.</p>
+
+            <Link
+              href="/"
+              className="mt-5 inline-flex rounded-lg bg-[#ff5b45] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#ff6b58]"
+            >
+              Analyze a vehicle
+            </Link>
           </div>
         )}
       </div>

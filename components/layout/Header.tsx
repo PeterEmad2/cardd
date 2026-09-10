@@ -47,9 +47,9 @@ export default function Header() {
         <div className="flex items-center gap-3 text-xs text-white/55">
           <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_12px_#34d399]" />
           System Operational
-          <div className="ml-2 grid h-9 w-9 place-items-center rounded-full border border-white/10 text-[10px]">
+          {/* <div className="ml-2 grid h-9 w-9 place-items-center rounded-full border border-white/10 text-[10px]">
             JD
-          </div>
+          </div> */}
         </div>
       </div>
     </header>
